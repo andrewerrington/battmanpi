@@ -28,10 +28,13 @@ from tkinter import messagebox
 
 import tkSimpleDialog
 
+import settings
+
 class setupDialog(tkSimpleDialog.Dialog):
     
     def body(self, master):
 
+        # The BattMan hardware object
         self.bm = self.kwargs['bm']
         
         # Rate control
@@ -94,12 +97,13 @@ class setupDialog(tkSimpleDialog.Dialog):
 
         self.iniFile.edit_modified(False)
 
-        self.saveIcon=tk.PhotoImage(file="tick.gif")
-        self.cancelIcon=tk.PhotoImage(file="exit.gif") 
+        self.saveIcon=tk.PhotoImage(data=settings.tickicon)
+        self.cancelIcon=tk.PhotoImage(data=settings.exiticon) 
 
         ttk.Button(self, text="Save", underline=0, command=self.ok, compound=tk.TOP, image=self.saveIcon).grid(column=0, row=3, sticky=tk.W, padx=6, pady=6)
         ttk.Button(self, text="Cancel", underline=5, command=self.cancel, compound=tk.TOP, image=self.cancelIcon).grid(column=1, row=3, sticky=tk.E, padx=(6,0), pady=6)
 
+        self.resizable(False,False)
         
         return self.rateScale
 

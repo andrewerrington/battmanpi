@@ -28,13 +28,16 @@ config = configparser.ConfigParser()
 
 config.read('battmanpi.ini')
 
-bitWeights=tuple(float(x) for x in filter(None, [x.strip() for x in config.get('voltage','DACbitWeights').splitlines()]))
+bitWeights=tuple(float(x) for x in filter(None,
+    [x.strip() for x in config.get('voltage','DACbitWeights').splitlines()]))
 
 DAClowMultiplier=config.getfloat('voltage','DAClowMultiplier')
 DAChighMultiplier=config.getfloat('voltage','DAChighMultiplier')
 
-dischargeRates=tuple(float(x) for x in filter(None, [x.strip() for x in config.get('current','discharge').splitlines()]))
-chargeRates=tuple(float(x) for x in filter(None, [x.strip() for x in config.get('current','charge').splitlines()]))
+dischargeRates=tuple(float(x) for x in filter(None,
+    [x.strip() for x in config.get('current','discharge').splitlines()]))
+chargeRates=tuple(float(x) for x in filter(None,
+    [x.strip() for x in config.get('current','charge').splitlines()]))
 
 numChargeRates=config.getint('current','numChargeRates')
 
@@ -59,7 +62,71 @@ liNPVMin=config.getfloat('chemistry','LiNPVmin')
 pbAcidVMax=config.getfloat('chemistry','PbAcidVmax')
 pbAcidVMin=config.getfloat('chemistry','PbAcidVmin')
 
+
 # Application settings and globals
 stoprequested = False
 
 MAX_CAPACITY=99999
+
+
+# Base64 encoded GIF icons
+tickicon='''
+R0lGODlhEAAQAPEAAACAAAD/AAAAgAAAACH5BAEAAAMALAAAAAAQABAAAAIsnI8YyRcAWnpASAfr
+HVTfbn1ZaCzKeJocimQLyAhu5iUyXcc0Kd38JfhthgUAOw==
+'''
+
+stopicon='''
+R0lGODlhEAAQAPEBAP8AAP///wAAAAAAACH5BAEAAAIALAAAAAAQABAAAAI1lBWpeR0AIwwNyQuo
+efhS3nlPkpHmOEbcWWbqhLbubMLT3a4xncqh9PmpDqCOhhg6OhaKRgEAOw==
+'''
+
+setupicon='''
+R0lGODlhEAAQAPIDAAAAAIsAAP8AAP///wAAAAAAAAAAAAAAACH5BAEAAAQALAAAAAAQABAAAAND
+SLoUwQvI6WAceFSrgNMB0BESSYLBIJrsKQSC2on0qWFrbk485zcPC0+yEWZAP0/KkdOdHCnnxAWT
+kaSYlHXFGpZ8CQA7
+'''
+
+saveicon='''
+R0lGODlhEAAQAPIAAAAAAP8AAAAA/5mZmczMzP///wAAAAAAACH5BAEAAAYALAAAAAAQABAAAANK
+CLrW/qDIoky410UwKG0D1kQTCTSisa1MSk4TJrMbJQcqDJ8utQ4AgTAgVOgkr1KydFw4n88HBHqS
+jgCELKFiVWGx26pVARwAAQkAOw==
+'''
+
+resistanceicon='''
+R0lGODlhEAAQAPIEAAAAAP8wMJmZmczMzP///wAAAAAAAAAAACH5BAEAAAUALAAAAAAQABAAAANE
+CLrcBSQSIakEb8odKYZRwG3fJo7EZ4XCsAllJQTCmj5NvhR87/9ADE/4AMIEhWOS2PsUnUIAEvpc
+DqtUn3IrDTa/vgQAOw==
+'''
+
+monitoricon='''
+R0lGODlhEAAQAPEAAAAAAP8wMAAAAAAAACH5BAEAAAIALAAAAAAQABAAAAInFISpe+sI2nNyqmph
+vjL45AUJEIIf8mGZOkXb9Y6xFkf2jbvSLgsFADs=
+'''
+
+exiticon='''
+R0lGODlhEAAQAPEAAIsAAP8AAJmZmQAAACH5BAEAAAMALAAAAAAQABAAAAIvnI+pGRAMIIinAVHn
+RXZ3LF0aqHQTuZioop2LYbpl264qTaqDDo/Z9rOtBoLhogAAOw==
+'''
+
+dischargeicon='''
+R0lGODlhEAAQAPEAAAAAAP8AAP8wMAAAACH5BAEAAAMALAAAAAAQABAAAAItHDSpu8efABgBvllt
+S1kb7hkTF5TWyJSmglpdC2VSSEW0TNewK/X+P0MJWYkCADs=
+'''
+
+chargeicon='''
+R0lGODlhEAAQAPEAAAAAAP8AAAAAAAAAACH5BAEAAAIALAAAAAAQABAAAAIsFISpGbaPAjhQNVcZ
+ovnivnFWQCocWUKUl61ZKLBt/CaA3OLqxPf+wQnaEAUAOw==
+'''
+
+battmanicon='''
+R0lGODlhIAAgAPIGAAAAAP8AAP//AAAA//8A/8DAwP///wAAACH5BAEAAAcALAAAAAAgACAAAAPO
+eLrcBxC6SVcpMYNatdEZ54CAYZpDJDJQIAjReYYiBr2RKxupSkEfUAAykGl+QI0LVjr1AMNNI8a7
+vZjNqtWnoJpI2cyV+wDKntnnEsf17pziK1vSdRs18jENDM7raWV8Vn5YQVIHWEKEfwRfdIiJa4sZ
+jSiPTItyUXZBLIN+JHBFbRGgIEWOQD0LcX8RqAYElFqsrYmwqQCoZBkBbzuyr7menHdUaCMZv8FE
+WoDEum/KYEjFhiQcGbjM1CLKudgrtUVoIOJTF3znFOnPFAkAOw==
+'''
+
+autocycleicon='''
+R0lGODlhEAAQAPEAAAAAAP8wMAAAAAAAACH5BAEAAAIALAAAAAAQABAAAAIwFISpGbaPAjhQNVcZ
+ojD4BFyLuIXdc5CCuq0jRHksyEVZ7VZ4jj7zBAwKJ5gih1IAADs=
+'''

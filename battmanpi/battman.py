@@ -47,20 +47,20 @@ class MainApplication(tk.Tk):
         self.initialize()
         
     def initialize(self):
-        self.appIcon = tk.PhotoImage(file="battmanicon.gif")
+        self.appIcon = tk.PhotoImage(data=settings.battmanicon)
         self.call('wm','iconphoto',self._w,self.appIcon)
 
         self.grid()
         
-        self.dischargeIcon=tk.PhotoImage(file="discharge.gif") 
-        self.chargeIcon=tk.PhotoImage(file="charge.gif") 
-        self.autoCycleIcon=tk.PhotoImage(file="autocycle.gif") 
-        self.resistanceIcon=tk.PhotoImage(file="resistance.gif") 
-        self.monitorIcon=tk.PhotoImage(file="monitor.gif") 
-        self.setupIcon=tk.PhotoImage(file="setup.gif") 
-        self.saveIcon=tk.PhotoImage(file="save.gif") 
-        self.exitIcon=tk.PhotoImage(file="exit.gif")
-        self.stopIcon=tk.PhotoImage(file="stop.gif")
+        self.dischargeIcon=tk.PhotoImage(data=settings.dischargeicon) 
+        self.chargeIcon=tk.PhotoImage(data=settings.chargeicon) 
+        self.autoCycleIcon=tk.PhotoImage(data=settings.autocycleicon) 
+        self.resistanceIcon=tk.PhotoImage(data=settings.resistanceicon) 
+        self.monitorIcon=tk.PhotoImage(data=settings.monitoricon) 
+        self.setupIcon=tk.PhotoImage(data=settings.setupicon) 
+        self.saveIcon=tk.PhotoImage(data=settings.saveicon) 
+        self.exitIcon=tk.PhotoImage(data=settings.exiticon)
+        self.stopIcon=tk.PhotoImage(data=settings.stopicon)
 
         self.buttonList=[]
 

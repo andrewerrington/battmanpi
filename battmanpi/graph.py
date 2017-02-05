@@ -42,6 +42,8 @@ TICK_SIZE = 9
 
 import tkinter.font
 import math
+import io
+from PIL import Image
 
 
 def frange(start, stop, step):
@@ -194,6 +196,8 @@ class graph:
 #        int i, x, y, xFrom, xTo, xVal;
 #        char num[20];
 #        double yVal, yStep;
+
+        xFrom = xTo = 0
 
         if (onlyX < 0):
             # Clear graph area
@@ -417,7 +421,11 @@ class graph:
 
 
     def SaveToFile(self, filename):
-        pass
+        # FIXME: This works, but the image is poor quality
+        ps = self.canvas.postscript(colormode='color')
+        img = Image.open(io.BytesIO(ps.encode('utf-8')))
+        img.save(filename)
+    
 #void Graph::SaveToFile( char *fileName )
 #{
 #    Graphics::TBitmap *bmp = new Graphics::TBitmap();

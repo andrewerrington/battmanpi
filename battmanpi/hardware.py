@@ -132,7 +132,7 @@ class battman:
         self.ZeroCurrent()
 
         # Turn on relays and give them 100ms to settle.
-        GPIO.setoutput(self.CONNECT_RELAY, 1)
+        GPIO.output(self.CONNECT_RELAY, 1)
         
         time.sleep(0.1)
 
@@ -261,3 +261,11 @@ class battman:
             time.sleep(0.001)
             GPIO.output(self.DA_INCREMENT, 0)
             time.sleep(0.001)
+            
+    def Exit(self):
+        # Tidy up GPIOs when exiting program
+        self.StopAndDisconnect()
+        GPIO.cleanup((self.DA_RESET, self.DA_INCREMENT, self.CONNECT_RELAY,
+            self.CHARGE_RELAY, self.RATE_MASK_0, self.RATE_MASK_1,
+            self.RATE_MASK_2, self.RATE_MASK_3, self.LOW_SENSE,
+            self.HIGH_SENSE))

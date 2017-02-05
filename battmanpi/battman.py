@@ -24,6 +24,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
 
 from setup import setupDialog
 from start import startDialog
@@ -168,7 +169,8 @@ class MainApplication(tk.Tk):
             settings.stoprequested = False
             self.hideButtons()
             print (dlg.result)
-            #self.func.checkImpedance(startup=True)
+            self.func.CheckImpedance('IMPEDANCE_BOTH', dlg.result)
+            self.showButtons()
         else:
             # Cancel pressed
             pass
@@ -190,16 +192,22 @@ class MainApplication(tk.Tk):
 
 
     def save(self, *args):
-        pass
+        fileName = filedialog.asksaveasfilename(title = "Save Graph",
+            filetypes = (("Windows Bitmap","*.bmp"),
+                         ("Portable Network Graphics","*.png"),
+                         ("all files","*.*")))
+        if fileName:
+            self.canvas.graph.SaveToFile(fileName)
 
 
     def exit(self, *args):
+        self.bm.Exit()
         self.quit()
+
 
 
 if __name__ == "__main__":
     
-  
     app = MainApplication(None)
     app.title('BattMan Pi - Computer Controlled Battery Manager - v0.1')
     app.mainloop()

@@ -130,7 +130,8 @@ class MainApplication(tk.Tk):
             settings.stoprequested = False
             self.hideButtons()
             print (dlg.result)
-            #self.func.performDischarge(startup=True)
+            self.func.PerformDischarge(0, dlg.result)
+            self.showButtons()
         else:
             # Cancel pressed
             pass
@@ -143,7 +144,8 @@ class MainApplication(tk.Tk):
             settings.stoprequested = False
             self.hideButtons()
             print (dlg.result)
-            #self.func.performCharge(startup=True)
+            self.func.PerformCharge(0, 0, dlg.result)
+            self.showButtons()
         else:
             # Cancel pressed
             pass
@@ -156,7 +158,8 @@ class MainApplication(tk.Tk):
             settings.stoprequested = False
             self.hideButtons()
             print (dlg.result)
-            #self.func.AutoCycle(startup=True)
+            self.func.AutoCycle(dlg.result)
+            self.showButtons()
         else:
             # Cancel pressed
             pass
@@ -179,7 +182,8 @@ class MainApplication(tk.Tk):
     def monitor(self, *args):
         settings.stoprequested = False
         self.hideButtons()
-        self.func.MonitorVoltage(startup=True)
+        self.func.MonitorVoltage()
+        self.showButtons()
             
 
     def setup(self, *args):
@@ -188,7 +192,7 @@ class MainApplication(tk.Tk):
 
     def stop(self):
         settings.stoprequested = True
-        self.showButtons()
+        #self.showButtons()
 
 
     def save(self, *args):

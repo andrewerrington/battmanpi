@@ -54,7 +54,7 @@ class func:
         return self.average
 
 
-    def writeToLog(oper, cycle, rate, capacity, energy, resistance):
+    def writeToLog(self, oper, cycle, rate, capacity, energy, resistance, formSettings):
 
         newFile = False
         try:
@@ -66,42 +66,300 @@ class func:
         
         #if( fp != NULL ) { FIXME: Check file was opened successfully
         if newFile:
-            fp.write('"Date/Time","Mode","Cycle","Of","Type","Rated","Cells","mA","mAh","mWh","Ohms","V/Cell"\n')
+            fp.write('"Date/Time","Mode","Cycle","Of","Type","Rated","Cells","mA","mAh","mWh","ohms","V/Cell"\n')
 
-        # FIXME: get StartForm variables from somewhere
         fp.write('"%s","%s",%d,%d,"%s",%d,%d,%1.1f,%1.1f,%1.1f,%1.4f,%1.4f\n'%
-                (time.strftime("%Y-%m-%d %H:%M:%S"), oper, StartForm.maximumCycles if cycle else 0,
-                StartForm.cellType, StartForm.capacity, StartForm.numberOfCells, rate*1000,
-                capacity, energy, resistance, 0.0 if capacity==0 else energy/(capacity*StartForm.numberOfCells)))
+                (time.strftime("%Y-%m-%d %H:%M:%S"), oper, cycle,
+                formSettings['maximumCycles'] if cycle else 0,
+                formSettings['cellType'], formSettings['capacity'],
+                formSettings['numberOfCells'], rate*1000,
+                capacity, energy, resistance, 0.0 if capacity==0 else
+                energy/(capacity*formSettings['numberOfCells'])))
         fp.close()
 
 
-    def waitSeconds(self, seconds, startup=False):
+    def PerformDischarge(self, cycle, formSettings):
+
+        if (formSettings['cellType'] == "NiCd"):
+            vMin = settings.niCdVMin * formSettings['numberOfCells']
+        elif (formSettings['cellType'] == "NiMH"):
+            vMin = settings.niMHVMin * formSettings['numberOfCells']
+        elif (formSettings['cellType'] == "LiPo"):
+            vMin = settings.liPoVMin * formSettings['numberOfCells']
+        elif (formSettings['cellType'] == "LiNP"):
+            vMin = settings.liNPVMin * formSettings['numberOfCells']
+        elif (formSettings['cellType'] == "PbAcid"):
+            vMin = settings.pbAcidVMin * formSettings['numberOfCells']
+        else:
+            #MessageDlg(AnsiString("Unrecognized cell type: ") + StartForm->cellType,
+            #           mtError,TMsgDlgButtons() << mbOK,0);
+            return None
+
+        dischargeRate = settings.dischargeRates[formSettings['dischargeRateCode']]
+    
+        #if( graph == NULL )
+        #    allocateGraph(0,0);
+        dischargeImpedance = self.CheckImpedance('IMPEDANCE_DISCHARGE', formSettings)
+
+        # Measured cut-off voltage is minimum no-load voltage minus the drop we
+        # get due to impedance.
+        vCutOff = vMin - dischargeImpedance * dischargeRate
+
+        # Take an initial reading to know where to start the graph.
+        v = self.takeReading(True)
+        self.allocateGraph(vCutOff if v > vCutOff else v-0.05, v+0.05)
+
+        # Write discharge information on top line.
+        buf = "Discharge"
+        if (cycle):
+            buf +=" %d of %d"%(cycle,formSettings['maximumCycles'])
+        buf += "  Battery: %d %s"%\
+            (formSettings['numberOfCells'],formSettings['cellType'])
+        buf += "  Rate: %1.0f mA"%(dischargeRate*1000)
+        buf += "  VMin: %1.2f V"%vCutOff
+        buf += "  Resistance: %1.4f ohms"%dischargeImpedance
+        self.canvas.graph.WriteTopLine(buf)
+
+        energy = 0.0    # Watt-seconds
+        capacityDischarged = 0.0    # Amp-seconds
+
+        start = time.time()
+        lastTime = start
+    
+        self.bm.DischargeMode(formSettings['dischargeRateCode'])
+
+        done = False
+    
+        while not done:
+            now = time.time()
+            elapsed = now - start
+            v = self.takeReading()
+
+            if (now > lastTime):
+                capacityDischarged += dischargeRate
+                energy += dischargeRate * v
+                lastTime = now
+        
+            if (v < vCutOff):
+                done = True
+
+            self.canvas.graph.WriteBottomLine(
+                "Time: %d:%02d:%02d  Voltage: %1.2f V  Discharge: %1.0f mAh (%1.0f mWh)"%
+                (elapsed/3600, (elapsed%3600)/60, elapsed%60, v,
+                capacityDischarged/3.6,energy/3.6))
+            self.canvas.graph.AddPoint(elapsed, v)
+
+            self.canvas.update()
+
+            if settings.stoprequested:
+                self.bm.StopAndDisconnect()
+                return None
+        
+
+        self.bm.StopAndDisconnect()
+        self.writeToLog("DIS", cycle, dischargeRate, capacityDischarged/3.6,
+            energy/3.6, dischargeImpedance, formSettings)
+
+        return elapsed
+    
+    
+    def PerformCharge(self, cycle, startAt, formSettings):
+        
+        deltaV = 1.0
+        vMax = 100.0
+
+        if (formSettings['cellType'] == "NiCd"):
+            deltaV = settings.niCdDeltaV
+        elif (formSettings['cellType'] == "NiMH"):
+            deltaV = settings.niMHDeltaV
+        elif (formSettings['cellType'] == "LiPo"):
+            vMax = settings.liPoVMax * formSettings['numberOfCells']
+        elif (formSettings['cellType'] == "LiNP"):
+            vMax = settings.liNPVMax * formSettings['numberOfCells']
+        elif (formSettings['cellType'] == "PbAcid"):
+            vMax = settings.pbAcidVMax * formSettings['numberOfCells']
+        else:
+            #MessageDlg(AnsiString("Unrecognized cell type: ") + StartForm->cellType,
+            #           mtError,TMsgDlgButtons() << mbOK,0);
+            return None
+
+        chargeRateCode = formSettings['chargeRateCode']
+        chargeRate = settings.dischargeRates[chargeRateCode]
+        origChargeRate = chargeRate
+
+        timeLimit = (formSettings['capacity'] * 3.6 / chargeRate)
+
+        if (deltaV < 1.0):
+            timeLimit *= 1.25
+        else:
+            timeLimit *= 1.75
 
         #if( graph == NULL )
         #    allocateGraph(0,0);
+        chargeImpedance = self.CheckImpedance('IMPEDANCE_CHARGE', formSettings)
 
-        if startup:
-            self.waitSecondsStart = time.time()
-            self.waitSecondsRunning = True
-            self.waitSecondsNormalExit = False
+        v = self.takeReading(True)
 
-        # Wait loop here
-        self.waitSecondsRemaining = self.waitSecondsStart + seconds - time.time()
+        if (cycle == 0):
+            self.allocateGraph(v-0.05, v+0.05)
 
-        if (remaining < 0):
-            # Time passed successfully
-            #break;
-            self.waitSecondsRunning = False
-            self.waitSecondsNormalExit = True
+        buf = "Charge"
+        if (cycle):
+            buf +=" %d of %d"%(cycle,formSettings['maximumCycles'])
+        buf += "  Battery: %d %s"%\
+            (formSettings['numberOfCells'],formSettings['cellType'])
+        buf += "  Rate: %1.0f mA"%(chargeRate*1000)
+        if (deltaV < 1.0):
+            buf += "  Delta: %1.2f%%"%(deltaV*100)
+        if (vMax < 100.0):
+            buf += "  VMax: %1.2f V"%vMax
+            
+        buf += "  TLimit: %2d:%02d:%02d"%\
+            (timeLimit/3600,(timeLimit%3600)/60,timeLimit%60)
+        buf += "  Resistance: %1.4f ohms"%chargeImpedance
+        self.canvas.graph.WriteTopLine(buf)
 
+        if (cycle):
+            dischargedCapacity = "/%1.0f mAh"%\
+                (startAt*settings.dischargeRates[formSettings['dischargeRateCode']]/3.6)
         else:
-            # Still counting down
-            self.canvas.graph.WriteBottomLine("Waiting... %d"%self.waitSecondsRemaining)
-            if not settings.stoprequested:
-                self.canvas.after(1000, lambda: self.waitSeconds(self, seconds))
+            dischargedCapacity = ''
+
+        maxVoltageSeen = 0.0
+        energy = 0.0    # Watt-seconds
+        capacityCharged = 0.0   # Amp-seconds
+
+        start = time.time()
+        lastTime = start
+        #, elapsed;
+        lastTimeDeltaWasSmall = start
+
+        self.bm.ChargeMode(chargeRateCode)
+
+        done = False
+
+        while not done:
+            now = time.time()
+            elapsed = now - start
+            v = self.takeReading()
+
+            if (now > lastTime):
+                capacityCharged += chargeRate
+                energy += chargeRate * v
+                lastTime = now
+
+            #double delta
+            if (elapsed > timeLimit):
+                done = True
+
+            elif (v > vMax):
+                chargeRateCode -= 1
+                self.bm.NewChargeRate(chargeRateCode)
+                chargeRate = settings.chargeRates[chargeRateCode]
+                if (chargeRateCode == 0):
+                    done = True
+                else:
+                    time.sleep(0.1)
+                    self.takeReading(True)
+
+            elif (elapsed > 60):
+                if (v > maxVoltageSeen):
+                    maxVoltageSeen = v
+
+                if (maxVoltageSeen == 0.0):
+                    delta = 0.0
+                else:
+                    delta = (maxVoltageSeen - v) / maxVoltageSeen
+
+                if (delta < deltaV):
+                    lastTimeDeltaWasSmall = now
+
+                if (now - lastTimeDeltaWasSmall > Settings.deltaVDuration):
+                    done = True
+
             else:
-                self.waitSecondsRunning = False
+                delta = 0
+                lastTimeDeltaWasSmall = now
+
+            buf = "Time: %d:%02d:%02d  Voltage: %1.2f V  Charge: %1.0f mAh%s (%1.0f mWh)"%\
+                (elapsed/3600, (elapsed%3600)/60, elapsed%60, v,
+                capacityCharged/3.6, dischargedCapacity, energy/3.6)
+            if (deltaV < 1.0):
+                buf += "  Delta: %1.2f%% (%d s)"%(delta*100, now-lastTimeDeltaWasSmall)
+            
+            self.canvas.graph.WriteBottomLine(buf)
+            self.canvas.graph.AddPoint(elapsed+startAt, v)
+
+            self.canvas.update()
+            
+            if settings.stoprequested:
+                self.bm.StopAndDisconnect()
+                return None
+    
+
+        self.bm.StopAndDisconnect()
+        self.writeToLog("CHG", cycle, origChargeRate, capacityCharged/3.6,
+            energy/3.6, chargeImpedance, formSettings)
+
+        return elapsed
+
+
+    def waitSeconds(self, seconds):
+
+        #if( graph == NULL )
+        #    allocateGraph(0,0);
+        start = time.time()
+        
+        while True:
+        
+            remaining = start + seconds - time.time()
+
+            if (remaining < 0):
+                break
+
+            self.canvas.graph.WriteBottomLine("Waiting... %d"%remaining)
+
+            self.canvas.update()
+
+            if settings.stoprequested:
+                return False
+            
+        return True
+
+
+    def AutoCycle(self, formSettings):
+
+        dischargeT = lastDischargeT = 0
+
+        for i in range(1, formSettings['maximumCycles']+1):
+            
+            dischargeT = self.PerformDischarge(i, formSettings)
+            print("DischargeT %s"%dischargeT)
+            if dischargeT is None:
+                break
+            
+            if not self.waitSeconds(settings.cycleRestTime):
+                break
+            
+            
+            if self.PerformCharge(i, dischargeT, formSettings) is None:
+                break            
+            
+            # Save graph of just completed cycle if requested.
+            if (formSettings['saveGraph']): #&& graph != NULL ) {
+                self.canvas.graph.SaveToFile(time.strftime("%Y%m%d-%H%M%S.bmp"))
+
+            if not self.waitSeconds(settings.cycleRestTime):
+                break
+
+            # Stop if capacity has not increased significantly since the
+            # previous cycle.
+            if( i > 2 and formSettings['stopAfterSmallIncrease']
+                and dischargeT <= lastDischargeT * settings.cycleTerminationRatio):
+                break
+            
+            lastDischargeT = dischargeT
+            
 
 
     def CheckImpedance(self, which, formSettings):
@@ -143,7 +401,7 @@ class func:
         if (which == 'IMPEDANCE_BOTH'):
             self.bm.StopAndDisconnect()
             self.canvas.graph.WriteTopLine(
-                "Charge: %1.4f Ohms (at %1.0f mA)  Discharge: %1.4f Ohms (at %1.0f mA)  Average: %1.4f Ohms"%
+                "Charge: %1.4f ohms (at %1.0f mA)  Discharge: %1.4f ohms (at %1.0f mA)  Average: %1.4f ohms"%
                 (resC, settings.chargeRates[formSettings['chargeRateCode']]*1000,
                 resD, settings.dischargeRates[formSettings['dischargeRateCode']]*1000,
                 (resC+resD)/2))
@@ -152,296 +410,37 @@ class func:
         return (resD if which == 'IMPEDANCE_DISCHARGE' else resC)
 
 
-    def MonitorVoltage(self, startup=False):
+    def MonitorVoltage(self):
 
-        if startup:
+        v = self.takeReading(True)
+        self.allocateGraph(v-0.05, v+0.05)
 
-            v = self.takeReading(True)
-            self.allocateGraph(v-0.05, v+0.05)
+        self.canvas.graph.WriteTopLine("Monitor")
 
-            self.canvas.graph.WriteTopLine("Monitor")
+        self.start = time.time()
 
-            self.start = time.time()
-
-        # This is an infinite loop and it will call itself until a flag on the
-        # main form indicates it should stop.
-
-        now = time.time()
-        elapsed = now - self.start
-
-        v = self.takeReading()
-
-        self.canvas.graph.WriteBottomLine("Time: %d:%02d:%02d  Voltage: %1.2fV"\
-            %(elapsed/3600, (elapsed%3600)/60, elapsed%60, v))
-
-        self.canvas.graph.AddPoint(elapsed, v)
-
-        self.canvas.update()
+        done = False
         
-        if not settings.stoprequested:
-            self.canvas.after(1000, self.MonitorVoltage)
-    
+        while not done:
+
+            now = time.time()
+            elapsed = now - self.start
+
+            v = self.takeReading()
+
+            self.canvas.graph.WriteBottomLine("Time: %d:%02d:%02d  Voltage: %1.2fV"\
+                %(elapsed/3600, (elapsed%3600)/60, elapsed%60, v))
+
+            self.canvas.graph.AddPoint(elapsed, v)
+            print(elapsed,v)
+
+            self.canvas.update()
+            
+            time.sleep(1)
+            
+            if settings.stoprequested:
+                done = True
+
     
     def SaveGraphToFile(self, fileName):
         self.canvas.graph.SaveToFile(fileName)
-    
-'''
-time_t PerformDischarge( int cycle )
-{
-    double vMin = 0.0;
-    if( StartForm->cellType == "NiCd" )
-        vMin = Settings.niCdVMin * StartForm->numberOfCells;
-    else if( StartForm->cellType == "NiMH" )
-        vMin = Settings.niMHVMin * StartForm->numberOfCells;
-    else if( StartForm->cellType == "LiPo" )
-        vMin = Settings.liPoVMin * StartForm->numberOfCells;
-    else if( StartForm->cellType == "LiNP" )
-        vMin = Settings.liNPVMin * StartForm->numberOfCells;
-    else if( StartForm->cellType == "PbAcid" )
-        vMin = Settings.pbAcidVMin * StartForm->numberOfCells;
-    else {
-        MessageDlg(AnsiString("Unrecognized cell type: ") + StartForm->cellType,
-                   mtError,TMsgDlgButtons() << mbOK,0);
-        return( -1 );
-    }
-
-    double dischargeRate =
-        Settings.dischargeRates[StartForm->dischargeRateCode];
-
-    if( graph == NULL )
-        allocateGraph(0,0);
-    double dischargeImpedance = CheckImpedance(IMPEDANCE_DISCHARGE,graph);
-
-    /* Measured cut-off voltage is minimum no-load voltage minus the drop we
-       get due to impedance. */
-    double vCutOff = vMin - dischargeImpedance * dischargeRate;
-
-    /* Take an initial reading to know where to start the graph. */
-    double v = takeReading(true);
-    allocateGraph(v > vCutOff ? vCutOff : v-0.05, v+0.05);
-
-    /* Write discharge information on top line. */
-    char buf[200];
-    strcpy(buf,"Discharge");
-    if( cycle )
-        sprintf(buf+strlen(buf)," %d of %d",cycle,StartForm->maximumCycles);
-    sprintf(buf+strlen(buf),"  Battery: %d %s",
-            StartForm->numberOfCells,StartForm->cellType.c_str());
-    sprintf(buf+strlen(buf),"  Rate: %1.0fmA",dischargeRate*1000);
-    sprintf(buf+strlen(buf),"  VMin: %1.2fV",vCutOff);
-    sprintf(buf+strlen(buf),"  Resistance: %1.4f Ohms",dischargeImpedance);
-    graph->WriteTopLine(buf);
-
-    double energy = 0.0; // Watt-seconds
-    double capacityDischarged = 0.0; // Amp-seconds
-
-    time_t start = time(NULL), lastTime = start, elapsed;
-    DischargeMode(StartForm->dischargeRateCode);
-
-    for( bool done = false; !done; ) {
-        time_t now = time(NULL);
-        elapsed = now - start;
-        v = takeReading();
-
-        if( now > lastTime ) {
-            capacityDischarged += dischargeRate;
-            energy += dischargeRate * v;
-            lastTime = now;
-        }
-
-        if( v < vCutOff )
-            done = true;
-
-        sprintf(buf,
-            "Time: %d:%02d:%02d  Voltage: %1.2fV  Discharge: %1.0fmAh (%1.0fmWh)",
-                elapsed/3600,(elapsed%3600)/60,elapsed%60,
-                v,capacityDischarged/3.6,energy/3.6);
-        graph->WriteBottomLine(buf);
-        graph->AddPoint(elapsed,v);
-
-        Application->ProcessMessages();
-        if( MainForm->StopRequested() ) {
-            StopAndDisconnect();
-            return( -1 );
-        }
-    }
-
-    StopAndDisconnect();
-    writeToLog("DIS",cycle,dischargeRate,capacityDischarged/3.6,energy/3.6,
-           dischargeImpedance);
-
-    return( elapsed );
-}
-
-time_t PerformCharge( int cycle, time_t startAt )
-{
-    double deltaV = 1.0, vMax = 100.0;
-    if( StartForm->cellType == "NiCd" )
-        deltaV = Settings.niCdDeltaV;
-    else if( StartForm->cellType == "NiMH" )
-        deltaV = Settings.niMHDeltaV;
-    else if( StartForm->cellType == "LiPo" )
-        vMax = Settings.liPoVMax * StartForm->numberOfCells;
-    else if( StartForm->cellType == "LiNP" )
-        vMax = Settings.liNPVMax * StartForm->numberOfCells;
-    else if( StartForm->cellType == "PbAcid" )
-        vMax = Settings.pbAcidVMax * StartForm->numberOfCells;
-    else {
-        MessageDlg(AnsiString("Unrecognized cell type: ") + StartForm->cellType,
-                   mtError,TMsgDlgButtons() << mbOK,0);
-        return( -1 );
-    }
-
-    int chargeRateCode = StartForm->chargeRateCode;
-    double chargeRate = Settings.chargeRates[chargeRateCode];
-    double origChargeRate = chargeRate;
-    time_t timeLimit = (time_t) (StartForm->capacity * 3.6 / chargeRate);
-    if( deltaV < 1.0 )
-        timeLimit *= 1.25;
-    else
-        timeLimit *= 1.75;
-
-    if( graph == NULL )
-        allocateGraph(0,0);
-    double chargeImpedance = CheckImpedance(IMPEDANCE_CHARGE,graph);
-
-    double v = takeReading(true);
-    if( cycle == 0 )
-        allocateGraph(v-0.05,v+0.05);
-
-    char buf[200];
-    strcpy(buf,"Charge");
-    if( cycle )
-        sprintf(buf+strlen(buf)," %d of %d",cycle,StartForm->maximumCycles);
-    sprintf(buf+strlen(buf),"  Battery: %d %s",
-            StartForm->numberOfCells,StartForm->cellType.c_str());
-    sprintf(buf+strlen(buf),"  Rate: %1.0fmA",chargeRate*1000);
-    if( deltaV < 1.0 )
-        sprintf(buf+strlen(buf),"  Delta: %1.2f%%",deltaV*100);
-    if( vMax < 100.0 )
-        sprintf(buf+strlen(buf),"  VMax: %1.2fV",vMax);
-    sprintf(buf+strlen(buf),"  TLimit: %2d:%02d:%02d",
-            timeLimit/3600,(timeLimit%3600)/60,timeLimit%60);
-    sprintf(buf+strlen(buf),"  Resistance: %1.4f Ohms",chargeImpedance);
-    graph->WriteTopLine(buf);
-
-    char dischargedCapacity[20];
-    if( cycle ) {
-        sprintf(dischargedCapacity,"/%1.0fmAh",
-        startAt*Settings.dischargeRates[StartForm->dischargeRateCode]/3.6);
-    }
-    else
-        *dischargedCapacity = '\0';
-
-    double maxVoltageSeen = 0.0;
-    double energy = 0.0; // Watt-seconds
-    double capacityCharged = 0.0; // Amp-seconds
-
-    time_t start = time(NULL), lastTime = start, elapsed;
-    time_t lastTimeDeltaWasSmall = start;
-
-    ChargeMode(chargeRateCode);
-
-    for( bool done = false; !done; ) {
-        time_t now = time(NULL);
-        elapsed = now - start;
-        v = takeReading();
-
-        if( now > lastTime ) {
-            capacityCharged += chargeRate;
-            energy += chargeRate * v;
-            lastTime = now;
-        }
-
-        double delta;
-        if( elapsed > timeLimit )
-            done = true;
-        else if( v > vMax ) {
-            NewChargeRate(--chargeRateCode);
-            chargeRate = Settings.chargeRates[chargeRateCode];
-            if( chargeRateCode == 0 )
-                done = true;
-            else {
-                Sleep(100);
-                takeReading(true);
-            }
-        }
-        else if( elapsed > 60 ) {
-            if( v > maxVoltageSeen )
-                maxVoltageSeen = v;
-
-            if( maxVoltageSeen == 0.0 )
-                delta = 0.0;
-            else
-                delta = (maxVoltageSeen - v) / maxVoltageSeen;
-            if( delta < deltaV )
-                lastTimeDeltaWasSmall = now;
-            if( now - lastTimeDeltaWasSmall > Settings.deltaVDuration )
-                done = true;
-        }
-        else {
-            delta = 0;
-            lastTimeDeltaWasSmall = now;
-        }
-
-        sprintf(buf,
-        "Time: %d:%02d:%02d  Voltage: %1.2fV  Charge: %1.0fmAh%s (%1.0fmWh)",
-                elapsed/3600,(elapsed%3600)/60,elapsed%60,
-                v,capacityCharged/3.6,dischargedCapacity,energy/3.6);
-        if( deltaV < 1.0 )
-            sprintf(buf+strlen(buf),"  Delta: %1.2f%% (%ds)",
-                    delta*100,now-lastTimeDeltaWasSmall);
-        graph->WriteBottomLine(buf);
-        graph->AddPoint(elapsed+startAt,v);
-
-        Application->ProcessMessages();
-        if( MainForm->StopRequested() ) {
-            StopAndDisconnect();
-            return( -1 );
-        }
-    }
-
-    StopAndDisconnect();
-    writeToLog("CHG",cycle,origChargeRate,capacityCharged/3.6,energy/3.6,
-           chargeImpedance);
-
-    return( elapsed );
-}
-
-void AutoCycle( )
-{
-    time_t dischargeT, lastDischargeT = 0;
-
-    for( int i = 1;
-         i <= StartForm->maximumCycles && !MainForm->StopRequested(); ++i )
-    {
-        if( i != 1 && !waitSeconds(Settings.cycleRestTime)
-         || (dischargeT = PerformDischarge(i)) == -1
-         || !waitSeconds(Settings.cycleRestTime)
-         || PerformCharge(i,dischargeT) == -1 )
-        {
-            break;
-        }
-
-    /* Save graph of just completed cycle if requested. */
-        if( StartForm->saveGraph && graph != NULL ) {
-            char fileName[64];
-            time_t now = time(NULL);
-            struct tm* tm = localtime(&now);
-            sprintf(fileName,"%04d%02d%02d-%02d%02d%02d.bmp",
-                    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-                    tm->tm_hour, tm->tm_min, tm->tm_sec);
-            graph->SaveToFile(fileName);
-        }
-
-    /* Stop if capacity has not increased significantly since the previous
-       cycle. */
-        if( i > 2 && StartForm->stopAfterSmallIncrease
-     && dischargeT <= lastDischargeT * Settings.cycleTerminationRatio )
-    {
-            break;
-    }
-        lastDischargeT = dischargeT;
-    }
-}
-'''

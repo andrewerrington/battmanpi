@@ -222,9 +222,9 @@ class startDialog(tkSimpleDialog.Dialog):
         except ValueError:
             self.result['capacity']=0
             
-        self.result['numberOfCells']=self.batteryNumberOfCells.get()
+        self.result['numberOfCells']=int(self.batteryNumberOfCells.get())
         self.result['chargeRateCode']=self.chargeRate.get()
         self.result['dischargeRateCode']=self.dischargeRate.get()
-        self.result['maximumCycles']=self.autoCycleMaxCycles.get()
-        self.result['stopAfterSmallIncrease']=self.stopCheckBox.get()
-        self.result['saveGraph']=self.saveGraphCheckBox.get()
+        self.result['maximumCycles']=int(self.autoCycleMaxCycles.get())
+        self.result['stopAfterSmallIncrease']=bool(self.stopCheckBox.get())
+        self.result['saveGraph']=bool(self.saveGraphCheckBox.get())

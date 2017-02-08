@@ -172,7 +172,9 @@ class MainApplication(tk.Tk):
             settings.stoprequested = False
             self.hideButtons()
             print (dlg.result)
+            self.canvas.graph = graph.graph(0,0, self.canvas)
             self.func.CheckImpedance('IMPEDANCE_BOTH', dlg.result)
+            del self.canvas.graph
             self.showButtons()
         else:
             # Cancel pressed

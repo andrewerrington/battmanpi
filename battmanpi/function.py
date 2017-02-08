@@ -39,7 +39,7 @@ class func:
         
     def allocateGraph(self, yMin, yMax):
         #del(self.canvas.graph)
-        
+
         self.canvas.graph = graph.graph(yMin, yMax, self.canvas)
 
 
@@ -99,6 +99,10 @@ class func:
     
         #if( graph == NULL )
         #    allocateGraph(0,0);
+        try:
+            self.canvas.graph
+        except NameError:
+            self.allocateGraph(0,0)
         dischargeImpedance = self.CheckImpedance('IMPEDANCE_DISCHARGE', formSettings)
 
         # Measured cut-off voltage is minimum no-load voltage minus the drop we
@@ -151,6 +155,8 @@ class func:
 
             self.canvas.update()
 
+            time.sleep(0.1)
+
             if settings.stoprequested:
                 self.bm.StopAndDisconnect()
                 return None
@@ -196,6 +202,10 @@ class func:
 
         #if( graph == NULL )
         #    allocateGraph(0,0);
+        try:
+            self.canvas.graph
+        except NameError:
+            self.allocateGraph(0,0)
         chargeImpedance = self.CheckImpedance('IMPEDANCE_CHARGE', formSettings)
 
         v = self.takeReading(True)
@@ -288,9 +298,14 @@ class func:
                 buf += "  Delta: %1.2f%% (%d s)"%(delta*100, now-lastTimeDeltaWasSmall)
             
             self.canvas.graph.WriteBottomLine(buf)
+            
+            print ("elapsed %s startat %s"%(elapsed,startAt))
+            
             self.canvas.graph.AddPoint(elapsed+startAt, v)
 
             self.canvas.update()
+            
+            time.sleep(0.1)
             
             if settings.stoprequested:
                 self.bm.StopAndDisconnect()
@@ -308,6 +323,10 @@ class func:
 
         #if( graph == NULL )
         #    allocateGraph(0,0);
+        try:
+            self.canvas.graph
+        except NameError:
+            self.allocateGraph(0,0)
         start = time.time()
         
         while True:
@@ -320,6 +339,8 @@ class func:
             self.canvas.graph.WriteBottomLine("Waiting... %d"%remaining)
 
             self.canvas.update()
+
+            time.sleep(0.1)
 
             if settings.stoprequested:
                 return False
@@ -370,8 +391,6 @@ class func:
     #define IMPEDANCE_BOTH 0
 
     #graph->WriteBottomLine("One moment please...");
-    
-        self.allocateGraph(0,0)
         
         self.canvas.graph.WriteBottomLine("One moment please...")
 
@@ -436,11 +455,16 @@ class func:
 
             self.canvas.update()
             
-            time.sleep(1)
+            time.sleep(0.1)
             
             if settings.stoprequested:
                 done = True
 
     
     def SaveGraphToFile(self, fileName):
-        self.canvas.graph.SaveToFile(fileName)
+        try:
+            self.canvas.graph
+        except NameError:
+            pass
+        else:
+            self.canvas.graph.SaveToFile(fileName)

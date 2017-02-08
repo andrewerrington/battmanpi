@@ -64,8 +64,7 @@ class graph:
 #    canvas->Brush->Color = clBlack;
 #    canvas->Pen->Color = TColor(0x66CC00);
 
-        self.yMin0 = yMin0
-        self.yMax0 = yMax0
+
         self.canvas = canvas
         
         self.font = tkinter.font.Font(size=8, weight='bold')  # Use the default font, size 10
@@ -124,6 +123,8 @@ class graph:
 
         self.yMin = yMin0
         self.yMax = yMax0
+        
+        print("init self.yMin %s self.yMax %s"%(self.yMin, self.yMax))
 
 #    xLabelScale = 1;
 #    xLabelOffset = 0;
@@ -147,7 +148,10 @@ class graph:
 #    double step = (*max - *min) / 7;
 #    int iLog = (int) floor(log10(step) * 3 + 0.5);
 
+        print("entering min %s max %s"%(min_, max_))
+
         step = (max_ - min_) / 7
+        
         iLog = int(math.floor(math.log10(step) * 3 + 0.5))
 
 #    switch( (iLog + 300) % 3 ) {
@@ -168,7 +172,7 @@ class graph:
 #	iLog -= 3;
 #    }
 
-        while( iLog > 2 ):
+        while (iLog > 2):
             step *= 10
             iLog -= 3
 
@@ -177,7 +181,7 @@ class graph:
 #	iLog += 3;
 #    }
 
-        while( iLog < 0 ):
+        while (iLog < 0):
             step /= 10
             iLog += 3
 
@@ -186,6 +190,8 @@ class graph:
 
         min_ = math.floor(min_/step) * step
         max_ = math.ceil(max_/step) * step
+
+        print("exiting min %s max %s step %s"%(min_, max_,step))
 
         return (step, min_, max_)
 
@@ -253,7 +259,9 @@ class graph:
                     #self.canvas.create_line(x-1,self.yBottom-1,x,self.yBottom-1, fill='green')
                     #canvas->Pixels[x-1][yBottom-1] = canvas->Pen->Color
                 
+            print("calling self.yMin %s self.yMax %s"%(self.yMin, self.yMax))
             yStep, self.yMin, self.yMax = self.axisLimitsAndSteps(self.yMin, self.yMax)
+            print("result self.yMin %s self.yMax %s"%(self.yMin, self.yMax))
 
             for yVal in frange(self.yMin, self.yMax + 0.1 * yStep, yStep):
                 y = math.floor(self.yBottom - (yVal - self.yMin) * (self.yBottom - self.yTop) / (self.yMax - self.yMin) + 0.5)

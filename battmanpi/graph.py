@@ -430,7 +430,7 @@ class graph:
 
     def SaveToFile(self, filename):
         # FIXME: This works, but the image is poor quality
-        ps = self.canvas.postscript(colormode='color')
+        ps = self.canvas.postscript(colormode='color', pagewidth="2560")
         img = Image.open(io.BytesIO(ps.encode('utf-8')))
         img.save(filename)
     

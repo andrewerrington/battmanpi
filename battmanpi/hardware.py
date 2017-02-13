@@ -28,8 +28,6 @@ import RPi.GPIO as GPIO
 
 import settings
 
-D_TO_A_BITS = 12
-
 class AtoDCalibration:
     def __init__(self):
         self.bitWeights = None
@@ -44,7 +42,6 @@ class battman:
 
     def __init__(self):
 
-        self.D_TO_A_BITS = 12
         self.calib = AtoDCalibration()
         self.calib.bitWeights = settings.bitWeights
         
@@ -97,7 +94,6 @@ class battman:
 
 
     def ChargeMode(self, rateCode):
-
         # Make sure current is off before doing anything.
         self.ZeroCurrent()
 
@@ -115,9 +111,9 @@ class battman:
 
 
     def NewChargeRate(self, rateCode):
-        
         # Turn on current.
         #  controlByte += rateCode & RATE_MASK;
+
         # We can't write a nibble directly, but writing
         # the LSB first should minimise disturbance.
         # controlByte = (controlByte & ~RATE_MASK) | (rateCode & RATE_MASK);
@@ -153,6 +149,7 @@ class battman:
         # Turn off relays and give them 100ms to settle.
         GPIO.output(self.CONNECT_RELAY, 0)
         GPIO.output(self.CHARGE_RELAY, 0)
+
         time.sleep(0.1)
 
 
@@ -171,7 +168,7 @@ class battman:
         v = 0.0
 
         # Add up the weights corresponding to the 1-bits in count.
-        for bit in range(D_TO_A_BITS):
+        for bit in range(len(weights)):
             if (count & 1):
                 v += weights[bit]
             count >>= 1
@@ -185,6 +182,7 @@ class battman:
             calib = self.calib
     
         # Reset 12-bit D-to-A counter and wait 1ms.
+        GPIO.output(self.DA_INCREMENT, 0)
         GPIO.output(self.DA_RESET, 1)
         time.sleep(0.001)
         GPIO.output(self.DA_RESET, 0)
@@ -195,7 +193,8 @@ class battman:
         lowCount = None
         highCount = None
 
-        for count in range(4096):
+        count = 0
+        while count < 4096:
             # Check if we've triggered the low-side sensor.
             if (lowCount is None and not GPIO.input(self.LOW_SENSE)):
                 lowCount = count
@@ -210,14 +209,30 @@ class battman:
             # count N+1 can actually be less than that for count N. So instead of
             # just incrementing once, we increment until we have a voltage that's
             # higher than the previous voltage.
-            while (self.bitsToVolts(count,calib.bitWeights) <= lastVolts):
+            
+            # Note that this code was not correctly implemented in the original
+            # and never executed.
+            
+            while True:
+                
                 GPIO.output(self.DA_INCREMENT, 1)
                 time.sleep(0.001)
-                GPIO.output(self.DA_INCREMENT, 1)
+                GPIO.output(self.DA_INCREMENT, 0)
                 time.sleep(0.001)
-                if (++count == 4096):
+                
+                count += 1
+                
+                if (count == 4096):
                     break
-
+                
+                volts = self.bitsToVolts(count,calib.bitWeights)
+                
+                if volts > lastVolts:
+                    break
+                
+            lastVolts = volts
+            
+            count += 1
 
         # If we failed to trigger one or both sensors, we don't have a valid
         # reading. Return None to indicate this.
@@ -241,15 +256,12 @@ class battman:
 
         # Finally turn on current at desired rate.
         self.NewChargeRate(rateCode)
-        #GPIO.output(self.RATE_MASK_0, rateCode & 0x01)
-        #GPIO.output(self.RATE_MASK_1, rateCode & 0x02)
-        #GPIO.output(self.RATE_MASK_2, rateCode & 0x04)
-        #GPIO.output(self.RATE_MASK_3, rateCode & 0x08)
 
 
     def SetCount(self, count):
-
+        
         # Reset 12-bit D-to-A counter and wait 1ms.
+        GPIO.output(self.DA_INCREMENT, 0)
         GPIO.output(self.DA_RESET, 1)
         time.sleep(0.001)
         GPIO.output(self.DA_RESET, 0)
@@ -261,6 +273,7 @@ class battman:
             time.sleep(0.001)
             GPIO.output(self.DA_INCREMENT, 0)
             time.sleep(0.001)
+            
             
     def Exit(self):
         # Tidy up GPIOs when exiting program

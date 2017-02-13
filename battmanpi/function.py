@@ -101,7 +101,7 @@ class func:
         #    allocateGraph(0,0);
         try:
             self.canvas.graph
-        except NameError:
+        except AttributeError:
             self.allocateGraph(0,0)
         dischargeImpedance = self.CheckImpedance('IMPEDANCE_DISCHARGE', formSettings)
 
@@ -204,7 +204,7 @@ class func:
         #    allocateGraph(0,0);
         try:
             self.canvas.graph
-        except NameError:
+        except AttributeError:
             self.allocateGraph(0,0)
         chargeImpedance = self.CheckImpedance('IMPEDANCE_CHARGE', formSettings)
 
@@ -325,7 +325,7 @@ class func:
         #    allocateGraph(0,0);
         try:
             self.canvas.graph
-        except NameError:
+        except AttributeError:
             self.allocateGraph(0,0)
         start = time.time()
         
@@ -464,7 +464,7 @@ class func:
     def SaveGraphToFile(self, fileName):
         try:
             self.canvas.graph
-        except NameError:
+        except AttributeError:
             pass
         else:
             self.canvas.graph.SaveToFile(fileName)

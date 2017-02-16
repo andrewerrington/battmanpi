@@ -25,6 +25,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+from tkinter import messagebox
 
 from setup import setupDialog
 from start import startDialog
@@ -198,18 +199,23 @@ class MainApplication(tk.Tk):
 
 
     def save(self, *args):
+        try:
+            self.canvas.graph
+        except AttributeError:
+            messagebox.showwarning("BattMan Pi","There is no graph to save.")
+            return
+            
         fileName = filedialog.asksaveasfilename(title = "Save Graph",
-            filetypes = (("Windows Bitmap","*.bmp"),
-                         ("Portable Network Graphics","*.png"),
+            filetypes = (("Portable Network Graphics","*.png"),
+                         ("Windows Bitmap","*.bmp"),
                          ("all files","*.*")))
         if fileName:
             self.canvas.graph.SaveToFile(fileName)
-
-
+            
+            
     def exit(self, *args):
         self.bm.Exit()
         self.quit()
-
 
 
 if __name__ == "__main__":

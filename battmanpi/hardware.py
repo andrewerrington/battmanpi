@@ -54,17 +54,17 @@ class battman:
         # use different GPIOs, but it's easy to edit the source here.
         
         # Output bits.
-        self.DA_RESET = 18
-        self.DA_INCREMENT = 17
-        self.CONNECT_RELAY = 4
-        self.CHARGE_RELAY = 27 
+        self.DA_RESET = 17
+        self.DA_INCREMENT = 4
+        self.CONNECT_RELAY = 26
+        self.CHARGE_RELAY = 13
         
         #define RATE_MASK 0x0F
         # Rate mask is built bitwise
         self.RATE_MASK_0 = 22   # lsb
         self.RATE_MASK_1 = 23
-        self.RATE_MASK_2 = 24
-        self.RATE_MASK_3 = 25   # msb
+        self.RATE_MASK_2 = 25
+        self.RATE_MASK_3 = 24   # msb
 
         # Input bits.
         self.LOW_SENSE = 6

@@ -31,6 +31,7 @@ LIBS:atmel
 LIBS:contrib
 LIBS:valves
 LIBS:relay_2rt
+LIBS:battmanpi
 LIBS:battmanpi-cache
 EELAYER 27 0
 EELAYER END
@@ -38,7 +39,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title ""
-Date "3 jan 2017"
+Date "22 feb 2017"
 Rev ""
 Comp ""
 Comment1 ""
@@ -1860,11 +1861,7 @@ Wire Wire Line
 Wire Wire Line
 	2400 3300 2700 3300
 Wire Wire Line
-	3300 3000 3300 3500
-Wire Wire Line
-	3300 3500 4000 3500
-Wire Wire Line
-	3200 3000 3200 3600
+	3200 3500 4000 3500
 Wire Wire Line
 	3200 3600 4300 3600
 Wire Wire Line
@@ -1874,7 +1871,6 @@ NoConn ~ 1600 2700
 NoConn ~ 1600 3400
 NoConn ~ 1600 3500
 NoConn ~ 1600 3600
-NoConn ~ 2400 2600
 NoConn ~ 2400 2800
 NoConn ~ 2400 2900
 $Comp
@@ -1891,18 +1887,18 @@ $EndComp
 Wire Wire Line
 	1600 3200 1300 3200
 Wire Wire Line
-	7700 4100 3100 4100
+	7700 4100 3200 4100
 Wire Wire Line
-	3000 4000 8100 4000
+	3200 4000 8100 4000
 $Comp
 L JUMPER JP1
 U 1 1 57C5743A
-P 2800 2500
-F 0 "JP1" H 2800 2650 60  0000 C CNN
-F 1 "5V link" H 2800 2420 40  0000 C CNN
-F 2 "~" H 2800 2500 60  0000 C CNN
-F 3 "~" H 2800 2500 60  0000 C CNN
-	1    2800 2500
+P 2900 2500
+F 0 "JP1" H 2900 2650 60  0000 C CNN
+F 1 "5V link" H 2900 2420 40  0000 C CNN
+F 2 "~" H 2900 2500 60  0000 C CNN
+F 3 "~" H 2900 2500 60  0000 C CNN
+	1    2900 2500
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1935,20 +1931,20 @@ Wire Wire Line
 $Comp
 L +5V #PWR051
 U 1 1 57C577A5
-P 3200 2400
-F 0 "#PWR051" H 3200 2490 20  0001 C CNN
-F 1 "+5V" H 3200 2490 30  0000 C CNN
-F 2 "" H 3200 2400 60  0000 C CNN
-F 3 "" H 3200 2400 60  0000 C CNN
-	1    3200 2400
+P 3300 2400
+F 0 "#PWR051" H 3300 2490 20  0001 C CNN
+F 1 "+5V" H 3300 2490 30  0000 C CNN
+F 2 "" H 3300 2400 60  0000 C CNN
+F 3 "" H 3300 2400 60  0000 C CNN
+	1    3300 2400
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	2500 2500 2400 2500
+	2400 2500 2600 2500
 Wire Wire Line
-	3100 2500 3200 2500
+	3200 2500 3300 2500
 Wire Wire Line
-	3200 2500 3200 2400
+	3300 2500 3300 2400
 $Comp
 L CONN_20X2 P5
 U 1 1 57C8242E
@@ -2051,7 +2047,7 @@ NoConn ~ 10400 2300
 NoConn ~ 10400 800 
 Text Label 1300 2800 0    60   ~ 0
 INCR
-Text Label 3200 3000 2    60   ~ 0
+Text Label 3200 3600 0    60   ~ 0
 ZERO
 Text Label 1300 4300 0    60   ~ 0
 CNCT
@@ -2109,18 +2105,8 @@ Wire Wire Line
 Wire Wire Line
 	2600 2700 2600 2750
 Wire Wire Line
-	3100 4100 3100 4600
-Wire Wire Line
-	3100 4600 1100 4600
-Wire Wire Line
-	1100 4600 1100 4100
-Wire Wire Line
-	3000 4000 3000 4500
-Wire Wire Line
-	3000 4500 1200 4500
-Wire Wire Line
 	1300 3000 1600 3000
-Text Label 3300 3000 0    60   ~ 0
+Text Label 3200 3500 0    60   ~ 0
 INCR
 NoConn ~ 2400 3600
 NoConn ~ 2400 3700
@@ -2130,31 +2116,35 @@ Wire Wire Line
 Text Label 1300 3000 0    60   ~ 0
 ZERO
 Wire Wire Line
-	1100 4100 1600 4100
+	1300 4100 1600 4100
 Wire Wire Line
-	1200 4500 1200 4300
-Wire Wire Line
-	1200 4300 1600 4300
+	1300 4300 1600 4300
 Wire Wire Line
 	1600 3900 1300 3900
-NoConn ~ 7550 6600
 Text Label 2700 3300 0    60   ~ 0
 D3
 Text Label 1200 5000 0    60   ~ 0
 D2
-Wire Wire Line
-	1600 3100 1300 3100
-Text Label 1300 3100 0    60   ~ 0
-D0
 Text Label 1300 3200 0    60   ~ 0
+D0
+Text Label 2700 3200 0    60   ~ 0
 D1
 Wire Wire Line
 	2400 3500 2700 3500
-NoConn ~ 2400 3200
-NoConn ~ 3100 3250
-NoConn ~ 6700 2750
-NoConn ~ 8500 3250
 Wire Wire Line
 	1600 2500 900  2500
 NoConn ~ 1600 3300
+Text Label 3200 4100 0    60   ~ 0
+MODE
+Text Label 3200 4000 0    60   ~ 0
+CNCT
+NoConn ~ 2400 3000
+Wire Wire Line
+	2400 3200 2700 3200
+NoConn ~ 1600 3100
+Wire Wire Line
+	2400 2600 2500 2600
+Wire Wire Line
+	2500 2600 2500 2500
+Connection ~ 2500 2500
 $EndSCHEMATC

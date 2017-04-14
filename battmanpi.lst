@@ -1,7 +1,7 @@
 eeschema (2013-dec-23)-stable  >> Creation date: Mon 19 Dec 2016 18:58:13 KST
 #Cmp ( order = Reference )
-| C1         10u         ;             ;             
-| C2         0.1u        ;             ;             
+| C1         10u 50V 2.5mm;            ;             
+| C2         0.1u 5mm    ;             ;             
 | C3         0.1u        ;             ;             
 | C4         0.1u        ;             ;             
 | C5         0.1u        ;             ;             
@@ -55,12 +55,12 @@ eeschema (2013-dec-23)-stable  >> Creation date: Mon 19 Dec 2016 18:58:13 KST
 | R31        10k         ;             ;             
 | R32        20k         ;             ;             
 | R33        20k         ;             ;             
-| R34        1k          ;             ;             
-| R35        10k         ;             ;             
+| R34        1k trimmer  ;             ;             
+| R35        10k trimmer ;             ;             
 | R36        100k        ;             ;             
 | R37        20k         ;             ;             
 | R38        4.7k        ;             ;             
-| R39        10k         ;             ;             
+| R39        10k trimmer ;             ;             
 | R40        100k        ;             ;             
 | R41        20k         ;             ;             
 | R42        4.7k        ;             ;             
